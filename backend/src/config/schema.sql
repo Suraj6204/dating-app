@@ -5,3 +5,4 @@ CREATE TABLE users (
   password TEXT NOT NULL,
   created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
+
