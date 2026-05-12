@@ -3,7 +3,7 @@ import jwt from 'jsonwebtoken'
 
 export const sendToken = (user:any ,statusCode:number , res:Response , message:string) => {
     const token = jwt.sign(
-        {id:user.id},
+        {id:user.id}, //taki isse user db se laa paye isAuth middleware me
         process.env.JWT_SECRET as string,
         {expiresIn: "7d"}
     );

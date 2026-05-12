@@ -3,6 +3,7 @@ import {z} from 'zod'
 const GenderEnum = z.enum(['male', 'female', 'other']);
 
 export const profileSchema = z.object({
+    name: z.string().min(1, 'Name is required'),
     bio: z.string().max(500).optional(),
     dob: z.string().refine((date)=> !isNaN(Date.parse(date)) , {
         message: "Invalid date format",
