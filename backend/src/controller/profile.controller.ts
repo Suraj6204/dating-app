@@ -27,7 +27,10 @@ export const updateProfile = TryCatch(async(req , res , next) => {
         RETURNING *;
     `
 
-    const result = pool.query(query , [userId, bio, gender, gender_preference, dob, interests, images, JSON.stringify(location)]);
+    const result = await pool.query(query , [userId, bio, gender, gender_preference, dob, interests, images, JSON.stringify(location)]);
+    if (!result || !result.rows || result.rows.length === 0) {
+        return next(new ErrorHandler(401, "User no longer exists"));
+    }
     const profile = result.rows[0];
     const profileWithMainPic = {
         ...profile,
@@ -43,7 +46,7 @@ export const updateProfile = TryCatch(async(req , res , next) => {
 
 export const getMyProfile = TryCatch(async(req , res , next) => {
     const userId = (req as any).user.id;
-    const result = pool.query(`SELECT * FROM profiles WHERE user_id = $1` , [userId]);
+    const result = await pool.query(`SELECT * FROM profiles WHERE user_id = $1` , [userId]);
     
     if (result.rows.length === 0) {
         return next(new ErrorHandler(404, "Profile not found"));

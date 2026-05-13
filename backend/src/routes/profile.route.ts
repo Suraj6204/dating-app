@@ -7,6 +7,6 @@ const router = Router();
 router.use(isAuthenticated);
 
 router.post('/update' , updateProfile);
-router.post('/me' , getMyProfile);
+router.get('/me' , getMyProfile);
 
-export default router;
+export default router; 

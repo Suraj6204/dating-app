@@ -3,6 +3,7 @@ import express from 'express';
 import dotenv from 'dotenv';
 import authRoutes from './routes/auth.route.js';
 import profileRoutes from './routes/profile.route.js';
+import swipeRoutes from './routes/swipe.route.js';
 import cookieParser from "cookie-parser";
 dotenv.config();
 
@@ -15,6 +16,7 @@ app.use(cookieParser());
 
 app.use('/api/auth', authRoutes);
 app.use('/api/profile', profileRoutes);
+app.use('/api/swipe', swipeRoutes);
 
 app.get('/', (req, res) => {
   res.send('Dating App API running');

@@ -15,7 +15,7 @@ export const isAuthenticated = TryCatch (async(req: Request, res: Response, next
     const decodedData = jwt.verify(token , process.env.JWT_SECRET as string) as JwtPayload
 
     //3.Check user exist in dB
-    const result = pool.query('SELECT id,name,email FROM users WHERE id=$1' , [decodedData.id]);
+    const result = await pool.query('SELECT id,name,email FROM users WHERE id=$1' , [decodedData.id]);
     const user = result.rows[0];
 
     if(!user){
