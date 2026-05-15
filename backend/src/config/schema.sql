@@ -8,7 +8,7 @@ CREATE TABLE users (
 
 CREATE TYPE gender_enum AS ENUM ('male', 'female', 'other');
 
- CREATE TABLE profiles (
+CREATE TABLE profiles (
   id SERIAL PRIMARY KEY, -- 1,2,3... ; takes less storage
   user_id UUID UNIQUE NOT NULL REFERENCES users(id) ON DELETE CASCADE,
   bio TEXT,
@@ -55,3 +55,18 @@ CREATE TABLE matches (
   UNIQUE(user_1, user_2)
 );
 
+CREATE EXTENSION IF NOT EXISTS vector;
+
+-- vector(1536) OpenAI models ke liye standard hai
+ALTER TABLE profiles ADD COLUMN bio_vector vector(1536);
+
+-- 1. PostGIS extension enable karo
+CREATE EXTENSION IF NOT EXISTS postgis;
+
+-- 2. Purane JSONB location column ko drop karke naya GEOGRAPHY column add karo
+-- Geography(Point, 4326) -> 4326 standard coordinate system hai (WGS 84)
+ALTER TABLE profiles DROP COLUMN IF EXISTS location;
+ALTER TABLE profiles ADD COLUMN location GEOGRAPHY(Point, 4326);
+
+-- 3. GIST Index lagao (Yehi hai wo magic jo search fast karta hai)
+CREATE INDEX idx_profiles_location ON profiles USING GIST (location);

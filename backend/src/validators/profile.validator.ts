@@ -29,9 +29,9 @@ export const profileSchema = z.object({
     gender : GenderEnum,
     gender_preference : GenderEnum,
     location: z.object({
-        lat: z.number(),
-        long: z.number()
-    }).optional(),
+        lat: z.number().min(-90).max(90),
+        long: z.number().min(-180).max(180)
+    }).required(),
     interests: z.array(z.string()).min(1,"Select at least one interest"),
     images: z.array(z.url()).min(4,"Upload at least four photos"),
 });

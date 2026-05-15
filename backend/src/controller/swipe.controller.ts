@@ -45,12 +45,56 @@ export const handleSwipe = TryCatch(async(req,res,next)=>{
     })
 });
 
-export const getRandomProfiles = TryCatch(async(req,res,next)=>{
+export const getRandomProfiles = TryCatch(async (req, res, next) => {
     const userId = (req as any).user.id;
-    const userProfile = await pool.query("SELECT gender_preference FROM profiles WHERE user_id = $1", [userId]);
-    if (userProfile.rows.length === 0) {
-        return next(new ErrorHandler(400, "Please complete your profile first"));
+
+    // 1. Logged-in user ki preference, location aur AI vector fetch karo
+    const userResult = await pool.query(
+        "SELECT gender_preference, bio_vector, location FROM profiles WHERE user_id = $1", 
+        [userId]
+    );
+
+    if (userResult.rows.length === 0 || !userResult.rows[0].location) {
+        return next(new ErrorHandler(400, "Please complete your profile and share location first"));
     }
 
-    
-})
+    const { gender_preference, bio_vector, location: userLocation } = userResult.rows[0];
+
+    // 2. Hybrid Query: PostGIS (50km) + Gender Filter + AI Ranking
+    const query = `
+        SELECT 
+            u.id, 
+            u.name, 
+            p.bio, 
+            p.images, 
+            p.dob, 
+            p.interests,
+            -- Distance in meters ko KM mein convert karein
+            ST_Distance(p.location, $1) / 1000 as distance_km,
+            -- AI Similarity distance
+            (p.bio_vector <=> $2) as vibe_distance
+        FROM profiles p
+        JOIN users u ON p.user_id = u.id
+        WHERE p.gender = $3               -- Preference filter
+        AND u.id != $4                    -- Self filter
+        AND ST_DWithin(p.location, $1, 50000) -- 50km radius filter
+        AND u.id NOT IN (                 -- Exclude already swiped
+            SELECT receiver_id FROM swipes WHERE sender_id = $4
+        )
+        ORDER BY vibe_distance ASC        -- Rank by AI vibe
+        LIMIT 10;
+    `;
+
+    const result = await pool.query(query, [
+        userLocation,              // $1: Current user's geography point
+        JSON.stringify(bio_vector), // $2: Current user's AI vector
+        gender_preference,         // $3
+        userId                     // $4
+    ]);
+
+    res.status(200).json({
+        success: true,
+        count: result.rows.length,
+        profiles: result.rows
+    });
+});
